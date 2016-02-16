@@ -8,8 +8,8 @@ Async Runner
 .. image:: https://img.shields.io/travis/vedarthk/async_runner.svg
         :target: https://travis-ci.org/vedarthk/async_runner
 
-.. image:: https://async-runner.readthedocs.org/en/latest/?badge=latest
-        :target: https://async-runner.readthedocs.org/en/latest/?badge=latest
+.. image:: http://readthedocs.org/projects/async-runner/badge/?version=latest
+        :target: http://async-runner.readthedocs.org/en/latest/?badge=latest
         :alt: Documentation Status
 
 
