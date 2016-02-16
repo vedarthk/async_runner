@@ -37,7 +37,7 @@ setup(
                  'async_runner'},
     include_package_data=True,
     install_requires=requirements,
-    license="ISCL",
+    license="MIT",
     zip_safe=False,
     keywords='async_runner',
     classifiers=[
