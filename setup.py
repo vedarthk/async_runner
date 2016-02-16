@@ -19,7 +19,7 @@ requirements = [
 ]
 
 test_requirements = [
-    # TODO: put package test requirements here
+    'django>=1.9.2'
 ]
 
 setup(
