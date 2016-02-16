@@ -39,7 +39,7 @@ def send_task(task_fn, queue, args=None, kwargs=None, **options):
         task_fn = _import(task_fn)
 
     return execute.send_task(
-        'async_runner.runner.run',
+        'async_runner.async_runner.run',
         kwargs={
             'task_fn': task_fn,
             'args': args or tuple(),
