@@ -10,6 +10,7 @@
 import types
 import platform
 import importlib
+from functools import partial
 
 from django.conf import settings
 from celery import task, execute
@@ -172,7 +173,10 @@ def _func_signature(fn):
     :rtype: ``unicode``
 
     """
-    return u'{}.{}'.format(fn.__module__, fn.__name__)
+    if type(fn) == partial:
+        return u'{}.{}'.format(fn.func.__module__, fn.func.__name__)
+    else:
+        return u'{}.{}'.format(fn.__module__, fn.__name__)
 
 
 def _process_task_exception(data, exception):
