@@ -13,11 +13,27 @@ Async Runner
         :alt: Documentation Status
 
 
-Async Runner
-
-* Free software: ISC license
-* Documentation: https://async_runner.readthedocs.org.
+Async runner is a thin wrapper over Celery API. This will enable control over failed messages by moving them to separate queue (generally queue_name_error) and also allows to retry the task with the help of retry policy.
 
 
-* TODO
-    - Decouple from Django
+More can be found at documentation: https://async_runner.readthedocs.org
+
+
+.. code-block:: python
+
+    from async_runner import async_runner
+    async_runner.send_task(
+        task_fn=func,  # task function can be python module path
+        queue='queue_name',  # name of the queue
+        args=(arg1, arg2, arg3, ),  # tuple/list of positional arguments to task function
+        kwargs={'name': 'parameter'},  # dictionary with key word arguments to task function
+        options={
+            'max_retries': 3,  # maximum number of times the task is retried
+            'retry_policy': {
+                'retry_interval': 12  # interval between retires (in seconds)
+            }
+        }
+    )
+
+
+**TODO:** Decouple from Django
