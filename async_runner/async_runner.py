@@ -22,19 +22,30 @@ __all__ = ('send_task', 'schedule_run')
 log = get_task_logger(__name__)
 
 
-def send_task(task_fn, queue, args=None, kwargs=None, **options):
+def send_task(task_fn, queue, args=None, kwargs=None,
+              use_rabbitmq_delayed_plugin=False, **options):
     """Execute background task with Celery.
-    If task fails it will get enqueued in error queue and can be re-proccessed.
-    Error queue can be specified in options.
 
     :param task_fn: function to execute as background task
     :param queue: `kombu.Queue` object
     :param args: positional arguments to task function
     :param kwargs: key word arguments to task function
+    :param use_rabbitmq_delayed_plugin: flag to use RabbitMQ delayed message plugin
     :returns: Query task state.
     :rtype: ``celery.result.AsyncResult``
 
     """
+    ASYNC_RUNNER = getattr(settings, 'ASYNC_RUNNER', {})
+    delay = options.get('countdown')
+
+    use_delayed_plugin = ASYNC_RUNNER.get(
+        'USE_RABBITMQ_DELAYED_PLUGIN', False) or use_rabbitmq_delayed_plugin
+
+    if delay and use_delayed_plugin:
+        new_headers = options.get('headers', {})
+        new_headers['x-delay'] = options.pop('countdown') * 1000L
+        options['headers'] = new_headers
+
     if isinstance(queue, Queue):
         options['queue'] = queue.name
     else:
