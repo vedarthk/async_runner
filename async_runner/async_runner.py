@@ -12,6 +12,7 @@ import platform
 import importlib
 from functools import partial
 
+from kombu import Queue
 from django.conf import settings
 from celery import task, execute
 from celery.utils.log import get_task_logger
@@ -34,7 +35,10 @@ def send_task(task_fn, queue, args=None, kwargs=None, **options):
     :rtype: ``celery.result.AsyncResult``
 
     """
-    options['queue'] = queue
+    if isinstance(queue, Queue):
+        options['queue'] = queue.name
+    else:
+        options['queue'] = queue
 
     if not isinstance(task_fn, types.FunctionType):
         task_fn = _import(task_fn)
