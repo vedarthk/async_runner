@@ -16,6 +16,7 @@ from kombu import Queue
 from django.conf import settings
 from celery import task, execute
 from celery.utils.log import get_task_logger
+from .action_types import Actions
 
 __all__ = ('send_task', 'schedule_run')
 
@@ -54,7 +55,7 @@ def send_task(task_fn, queue, args=None, kwargs=None,
     if not isinstance(task_fn, types.FunctionType):
         task_fn = _import(task_fn)
 
-    return execute.send_task(
+    enqueued_task = execute.send_task(
         'async_runner.async_runner.run',
         kwargs={
             'task_fn': task_fn,
@@ -64,6 +65,14 @@ def send_task(task_fn, queue, args=None, kwargs=None,
         },
         **options
     )
+    _action_callback(
+        Actions.enqueued, task_id=enqueued_task.id,
+        task_fn_module=task_fn.__module__,
+        task_fn_name=task_fn.__name__,
+        args=args,
+        kwargs=kwargs
+    )
+    return enqueued_task
 
 
 @task
@@ -78,14 +87,34 @@ def run(task_fn, args, kwargs, options):
     :rtype: ``NoneType``
 
     """
-
+    _action_callback(
+        Actions.picked_up, task_id=run.request.id,
+        task_fn_module=task_fn.__module__,
+        task_fn_name=task_fn.__name__,
+        args=args,
+        kwargs=kwargs
+    )
     func_signature = _func_signature(task_fn)
     log.info(u'Running {} [{}]'.format(
         func_signature, run.request.id))
 
     try:
         task_fn(*args, **kwargs)
+        _action_callback(
+            Actions.completed, task_id=run.request.id,
+            task_fn_module=task_fn.__module__,
+            task_fn_name=task_fn.__name__,
+            args=args,
+            kwargs=kwargs
+        )
     except Exception as e:
+        _action_callback(
+            Actions.error, task_id=run.request.id,
+            task_fn_module=task_fn.__module__,
+            task_fn_name=task_fn.__name__,
+            args=args,
+            kwargs=kwargs
+        )
         if options.get('retry', False):
             return retry_run(
                 task_fn=task_fn, args=args, kwargs=kwargs, options=options)
@@ -236,3 +265,21 @@ def _import(module_path):
     module_name, name = '.'.join(parts[:-1]), parts[-1]
 
     return getattr(importlib.import_module(module_name), name)
+
+
+def _action_callback(action, task_id, task_fn_module, task_fn_name, queue, countdown, args, kwargs):
+    assert action in [a for a in Actions]
+    log.info(
+        'action={} task_id={} queue={} task_fn={}.{} args={} kwargs={} countdown={}'.format(
+            action.value, task_id, queue, task_fn_module, task_fn_name, args, kwargs, countdown
+        )
+    )
+    ASYNC_RUNNER = getattr(settings, 'ASYNC_RUNNER', None)
+
+    if ASYNC_RUNNER and 'ACTION_CALLBACKS' in ASYNC_RUNNER:
+        func = ASYNC_RUNNER['ACTION_CALLBACKS'].get(action.value)
+        if func:
+            func(
+                task_id=task_id, task_fn_module=task_fn_module,
+                task_fn_name=task_fn_name, queue=queue, countdown=countdown
+            )
