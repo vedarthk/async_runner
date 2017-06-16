@@ -44,7 +44,7 @@ def send_task(task_fn, queue, args=None, kwargs=None,
 
     if delay and use_delayed_plugin:
         new_headers = options.get('headers', {})
-        new_headers['x-delay'] = options.pop('countdown') * 1000L
+        new_headers['x-delay'] = options.pop('countdown') * 1000
         options['headers'] = new_headers
 
     if isinstance(queue, Queue):
