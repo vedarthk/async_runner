@@ -289,5 +289,6 @@ def _action_callback(action, task_id, task_fn_module, task_fn_name, queue, count
         if module_string:
             func = _import(module_string)
             return func(
-                task_id=task_id, task_fn_module=task_fn_module,
-                task_fn_name=task_fn_name, queue=queue, countdown=countdown)
+                action=action.value, task_id=task_id, task_fn_module=task_fn_module,
+                task_fn_name=task_fn_name, queue=queue, countdown=countdown,
+                args=args, kwargs=kwargs)
