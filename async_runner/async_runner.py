@@ -285,8 +285,9 @@ def _action_callback(action, task_id, task_fn_module, task_fn_name, queue, count
     ASYNC_RUNNER = getattr(settings, 'ASYNC_RUNNER', {})
 
     if 'ACTION_CALLBACKS' in ASYNC_RUNNER:
-        func = ASYNC_RUNNER['ACTION_CALLBACKS'].get(action.value)
-        return func and func(
-            task_id=task_id, task_fn_module=task_fn_module,
-            task_fn_name=task_fn_name, queue=queue, countdown=countdown
-        )
+        module_string = ASYNC_RUNNER['ACTION_CALLBACKS'].get(action.value)
+        if module_string:
+            func = _import(module_string)
+            return func(
+                task_id=task_id, task_fn_module=task_fn_module,
+                task_fn_name=task_fn_name, queue=queue, countdown=countdown)
