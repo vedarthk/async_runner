@@ -24,7 +24,7 @@ test_requirements = [
 
 setup(
     name='async_runner',
-    version='0.1.3',
+    version='0.1.4',
     description="Async Runner",
     long_description=readme + '\n\n' + history,
     author="Vedarth Kulkarni",
