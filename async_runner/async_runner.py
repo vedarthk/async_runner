@@ -66,11 +66,13 @@ def send_task(task_fn, queue, args=None, kwargs=None,
         **options
     )
     _action_callback(
-        Actions.enqueued, task_id=enqueued_task.id,
+        action=Actions.enqueued, task_id=enqueued_task.id,
         task_fn_module=task_fn.__module__,
         task_fn_name=task_fn.__name__,
         args=args,
-        kwargs=kwargs
+        kwargs=kwargs,
+        queue=options['queue'],
+        countdown=delay
     )
     return enqueued_task
 
@@ -92,7 +94,9 @@ def run(task_fn, args, kwargs, options):
         task_fn_module=task_fn.__module__,
         task_fn_name=task_fn.__name__,
         args=args,
-        kwargs=kwargs
+        kwargs=kwargs,
+        queue=options['queue'],
+        countdown=options.get('countdown')
     )
     func_signature = _func_signature(task_fn)
     log.info(u'Running {} [{}]'.format(
@@ -105,7 +109,9 @@ def run(task_fn, args, kwargs, options):
             task_fn_module=task_fn.__module__,
             task_fn_name=task_fn.__name__,
             args=args,
-            kwargs=kwargs
+            kwargs=kwargs,
+            queue=options['queue'],
+            countdown=options.get('countdown')
         )
     except Exception as e:
         _action_callback(
@@ -113,7 +119,9 @@ def run(task_fn, args, kwargs, options):
             task_fn_module=task_fn.__module__,
             task_fn_name=task_fn.__name__,
             args=args,
-            kwargs=kwargs
+            kwargs=kwargs,
+            queue=options['queue'],
+            countdown=options.get('countdown')
         )
         if options.get('retry', False):
             return retry_run(
