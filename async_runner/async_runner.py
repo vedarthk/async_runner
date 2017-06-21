@@ -272,21 +272,25 @@ def _import(module_path):
 
 
 def _action_callback(action, task_id, task_fn, queue, countdown, args, kwargs):
-    assert action in [a for a in Actions]
-    log.info(
-        'action={} task_id={} queue={} task_fn={} args={} kwargs={} countdown={}'.format(
-            action.value, task_id, queue, _func_signature(task_fn),
-            args, kwargs, countdown
+    try:
+        assert action in [a for a in Actions]
+        log.info(
+            'action={} task_id={} queue={} task_fn={} args={} kwargs={} countdown={}'.format(
+                action.value, task_id, queue, _func_signature(task_fn),
+                args, kwargs, countdown
+            )
         )
-    )
-    ASYNC_RUNNER = getattr(settings, 'ASYNC_RUNNER', {})
+        ASYNC_RUNNER = getattr(settings, 'ASYNC_RUNNER', {})
 
-    if 'ACTION_CALLBACKS' in ASYNC_RUNNER:
-        module_string = ASYNC_RUNNER['ACTION_CALLBACKS'].get(action.value)
-        if module_string:
-            func = _import(module_string)
-            return func(
-                action=action.value, task_id=task_id,
-                task_fn=_func_signature(task_fn),
-                queue=queue, countdown=countdown,
-                args=args, kwargs=kwargs)
+        if 'ACTION_CALLBACKS' in ASYNC_RUNNER:
+            module_string = ASYNC_RUNNER['ACTION_CALLBACKS'].get(action.value)
+            if module_string:
+                func = _import(module_string)
+                return func(
+                    action=action.value, task_id=task_id,
+                    task_fn=_func_signature(task_fn),
+                    queue=queue, countdown=countdown,
+                    args=args, kwargs=kwargs)
+    except Exception as e:
+        log.error("Callback failed for action={} exception={}".format(
+            action, e))
