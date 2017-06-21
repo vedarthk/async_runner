@@ -67,8 +67,7 @@ def send_task(task_fn, queue, args=None, kwargs=None,
     )
     _action_callback(
         action=Actions.enqueued, task_id=enqueued_task.id,
-        task_fn_module=task_fn.__module__,
-        task_fn_name=task_fn.__name__,
+        task_fn=task_fn,
         args=args,
         kwargs=kwargs,
         queue=options['queue'],
@@ -91,8 +90,7 @@ def run(task_fn, args, kwargs, options):
     """
     _action_callback(
         Actions.picked_up, task_id=run.request.id,
-        task_fn_module=task_fn.__module__,
-        task_fn_name=task_fn.__name__,
+        task_fn=task_fn,
         args=args,
         kwargs=kwargs,
         queue=options['queue'],
@@ -106,8 +104,7 @@ def run(task_fn, args, kwargs, options):
         task_fn(*args, **kwargs)
         _action_callback(
             Actions.completed, task_id=run.request.id,
-            task_fn_module=task_fn.__module__,
-            task_fn_name=task_fn.__name__,
+            task_fn=task_fn,
             args=args,
             kwargs=kwargs,
             queue=options['queue'],
@@ -116,8 +113,7 @@ def run(task_fn, args, kwargs, options):
     except Exception as e:
         _action_callback(
             Actions.error, task_id=run.request.id,
-            task_fn_module=task_fn.__module__,
-            task_fn_name=task_fn.__name__,
+            task_fn=task_fn,
             args=args,
             kwargs=kwargs,
             queue=options['queue'],
@@ -275,11 +271,12 @@ def _import(module_path):
     return getattr(importlib.import_module(module_name), name)
 
 
-def _action_callback(action, task_id, task_fn_module, task_fn_name, queue, countdown, args, kwargs):
+def _action_callback(action, task_id, task_fn, queue, countdown, args, kwargs):
     assert action in [a for a in Actions]
     log.info(
-        'action={} task_id={} queue={} task_fn={}.{} args={} kwargs={} countdown={}'.format(
-            action.value, task_id, queue, task_fn_module, task_fn_name, args, kwargs, countdown
+        'action={} task_id={} queue={} task_fn={} args={} kwargs={} countdown={}'.format(
+            action.value, task_id, queue, _func_signature(task_fn),
+            args, kwargs, countdown
         )
     )
     ASYNC_RUNNER = getattr(settings, 'ASYNC_RUNNER', {})
@@ -289,6 +286,7 @@ def _action_callback(action, task_id, task_fn_module, task_fn_name, queue, count
         if module_string:
             func = _import(module_string)
             return func(
-                action=action.value, task_id=task_id, task_fn_module=task_fn_module,
-                task_fn_name=task_fn_name, queue=queue, countdown=countdown,
+                action=action.value, task_id=task_id,
+                task_fn=_func_signature(task_fn),
+                queue=queue, countdown=countdown,
                 args=args, kwargs=kwargs)
